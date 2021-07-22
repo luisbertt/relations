@@ -2,10 +2,8 @@ import { useEffect, useRef, useState } from "react"
 import { useReactToPrint } from "react-to-print"
 
 function CSVtoArray(text) {
-    var re_valid =
-        /^\s*(?:'[^'\\]*(?:\\[\S\s][^'\\]*)*'|"[^"\\]*(?:\\[\S\s][^"\\]*)*"|[^,'"\s\\]*(?:\s+[^,'"\s\\]+)*)\s*(?:,\s*(?:'[^'\\]*(?:\\[\S\s][^'\\]*)*'|"[^"\\]*(?:\\[\S\s][^"\\]*)*"|[^,'"\s\\]*(?:\s+[^,'"\s\\]+)*)\s*)*$/
-    var re_value =
-        /(?!\s*$)\s*(?:'([^'\\]*(?:\\[\S\s][^'\\]*)*)'|"([^"\\]*(?:\\[\S\s][^"\\]*)*)"|([^,'"\s\\]*(?:\s+[^,'"\s\\]+)*))\s*(?:,|$)/g
+    var re_valid = /^\s*(?:'[^'\\]*(?:\\[\S\s][^'\\]*)*'|"[^"\\]*(?:\\[\S\s][^"\\]*)*"|[^,'"\s\\]*(?:\s+[^,'"\s\\]+)*)\s*(?:,\s*(?:'[^'\\]*(?:\\[\S\s][^'\\]*)*'|"[^"\\]*(?:\\[\S\s][^"\\]*)*"|[^,'"\s\\]*(?:\s+[^,'"\s\\]+)*)\s*)*$/
+    var re_value = /(?!\s*$)\s*(?:'([^'\\]*(?:\\[\S\s][^'\\]*)*)'|"([^"\\]*(?:\\[\S\s][^"\\]*)*)"|([^,'"\s\\]*(?:\s+[^,'"\s\\]+)*))\s*(?:,|$)/g
 
     // Return NULL if input string is not well formed CSV string.
     if (!re_valid.test(text)) return null
@@ -30,27 +28,27 @@ function CSVtoArray(text) {
 
 function transformData(data) {
     const table = data.split("\r\n").splice(5)
-    const list = table.map(row => CSVtoArray(row))
+    const list = table.map((row) => CSVtoArray(row))
 
     const cardholders = [
-        ...new Set(list.filter(row => row[9] === "D").map(row => row[0])),
+        ...new Set(list.filter((row) => row[9] === "D").map((row) => row[0])),
     ]
     const cardnumbers = [
-        ...new Set(list.filter(row => row[9] === "D").map(row => row[1])),
+        ...new Set(list.filter((row) => row[9] === "D").map((row) => row[1])),
     ]
 
     const curatedList = list
-        .filter(row => row[9] !== "C")
-        .map(row => row.slice(1, 9))
+        .filter((row) => row[9] !== "C")
+        .map((row) => row.slice(1, 9))
 
     const groupedData = cardnumbers.map((num, i) => {
         const trans = curatedList
-            .filter(row => row[0] === num)
-            .map(tran => tran.slice(1))
+            .filter((row) => row[0] === num)
+            .map((tran) => tran.slice(1))
         return {
             cardholder: cardholders[i],
             cardNumber: num,
-            transactions: trans.map(tran => ({
+            transactions: trans.map((tran) => ({
                 postDate: tran[0],
                 transDate: tran[1],
                 refId: tran[2],
@@ -72,18 +70,18 @@ const useData = () => {
 
     useEffect(() => {
         function getData() {
-            selectedFile.text().then(data => setData(transformData(data)))
+            selectedFile.text().then((data) => setData(transformData(data)))
         }
         if (selectedFile) getData()
     }, [selectedFile])
 
     const handleTypeChange = (type, cardholder, rowIndex) => {
         const newTrans = data
-            .filter(rel => rel.cardholder === cardholder)[0]
+            .filter((rel) => rel.cardholder === cardholder)[0]
             .transactions?.map((t, i) => (i !== rowIndex ? t : { ...t, type }))
 
-        setData(data =>
-            data.map(rel => {
+        setData((data) =>
+            data.map((rel) => {
                 if (rel.cardholder !== cardholder) return rel
                 return { ...rel, transactions: newTrans }
             })
@@ -100,12 +98,14 @@ const App = () => {
         content: () => printRef.current,
     })
 
-    const relationsTransactions = data ? data.map(rel => rel.transactions) : []
+    const relationsTransactions = data
+        ? data.map((rel) => rel.transactions)
+        : []
     const grandTotal = data
         ? data
-              .map(rel => rel.transactions)
-              .map(rel =>
-                  rel.map(t => Number(t.amount)).reduce((a, b) => a + b)
+              .map((rel) => rel.transactions)
+              .map((rel) =>
+                  rel.map((t) => Number(t.amount)).reduce((a, b) => a + b)
               )
               .reduce((a, b) => a + b, 0)
               .toFixed(2)
@@ -116,19 +116,19 @@ const App = () => {
     const groupedAmountsByTypes = types.map((type, i) =>
         relationsTransactions
             .flat()
-            .filter(t => t.type === type)
-            .map(t => Number(t.amount))
+            .filter((t) => t.type === type)
+            .map((t) => Number(t.amount))
             .reduce((a, b) => a + b, 0)
             .toFixed(2)
     )
 
     const groupToDivide = groupedAmountsByTypes
         .filter((t, i) => i !== 1)
-        .map(t => Number(t))
+        .map((t) => Number(t))
         .reduce((a, b) => a + b, 0)
         .toFixed(2)
 
-    const handleFileChange = e => {
+    const handleFileChange = (e) => {
         setSelectedFile(e.target.files[0])
     }
 
@@ -193,11 +193,11 @@ const Relations = ({ relations, handleTypeChange }) => {
     return (
         <div className="border-2">
             <h1 className="font-bold text-center bg-blue-200">
-                CASHREWARDS (008) - 01 June 2021
+                CASHREWARDS (008)
             </h1>
             <div className="space-y-5">
                 {relations
-                    ? relations.map(rel => {
+                    ? relations.map((rel) => {
                           return (
                               <CardholderTrans
                                   cardholder={rel.cardholder}
@@ -222,7 +222,7 @@ const CardholderTrans = ({
 }) => {
     const total = trans
         ? trans
-              .map(t => Number(t.amount))
+              .map((t) => Number(t.amount))
               .reduce((a, b) => a + b, 0)
               .toFixed(2)
         : 0
@@ -271,7 +271,7 @@ const CardholderTrans = ({
                                       transaction.type
                                   )}`}
                               >
-                                  {Object.keys(transaction).map(key =>
+                                  {Object.keys(transaction).map((key) =>
                                       key !== "type" ? (
                                           <td
                                               key={Math.random() * 1000}
@@ -284,7 +284,7 @@ const CardholderTrans = ({
                                   <td>
                                       <select
                                           value={transaction.type}
-                                          onChange={e =>
+                                          onChange={(e) =>
                                               handleTypeChange(
                                                   e.target.value,
                                                   cardholder,
