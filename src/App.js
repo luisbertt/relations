@@ -29,7 +29,7 @@ function CSVtoArray(text) {
 }
 
 function transformData(data) {
-    const table = data.split("\r\n").splice(5)
+    const table = data.trim().split("\r\n").splice(5)
     console.log(table)
     const list = table.map(row => CSVtoArray(row))
 
