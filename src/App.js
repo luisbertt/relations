@@ -13,7 +13,7 @@ function CSVtoArray(text) {
     var a = [] // Initialize array to receive values.
     text.replace(
         re_value, // "Walk" the string using replace with callback.
-        function (m0, m1, m2, m3) {
+        function (_, m1, m2, m3) {
             // Remove backslash from \' in single quoted values.
             if (m1 !== undefined) a.push(m1.replace(/\\'/g, "'"))
             // Remove backslash from \" in double quoted values.
@@ -30,10 +30,8 @@ function CSVtoArray(text) {
 
 function transformData(data) {
     const table = data.trim().split("\r\n").splice(5)
-    console.log(table)
     const list = table.map(row => CSVtoArray(row))
 
-    console.log(list)
     const cardholders = [...new Set(list.map(row => row[0]))]
     const cardnumbers = [...new Set(list.map(row => row[1]))]
 
@@ -109,7 +107,7 @@ const App = () => {
 
     const types = ["Expenses", "Repaint", "Restaurants", "Gas", "Unknown"]
 
-    const groupedAmountsByTypes = types.map((type, i) =>
+    const groupedAmountsByTypes = types.map(type =>
         relationsTransactions
             .flat()
             .filter(t => t.type === type)
@@ -119,7 +117,7 @@ const App = () => {
     )
 
     const groupToDivide = groupedAmountsByTypes
-        .filter((t, i) => i !== 1)
+        .filter((_, i) => i !== 1)
         .map(t => Number(t))
         .reduce((a, b) => a + b, 0)
         .toFixed(2)
