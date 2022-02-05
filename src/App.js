@@ -1,7 +1,11 @@
 import { useEffect, useRef, useState } from "react"
 import { useReactToPrint } from "react-to-print"
 
-function CSVtoArray(text) {
+/*
+ * split csv row into an array
+ * "example,one,two" -> ['example','one','two']
+ */
+function csvRowToArray(text) {
     var re_valid =
         /^\s*(?:'[^'\\]*(?:\\[\S\s][^'\\]*)*'|"[^"\\]*(?:\\[\S\s][^"\\]*)*"|[^,'"\s\\]*(?:\s+[^,'"\s\\]+)*)\s*(?:,\s*(?:'[^'\\]*(?:\\[\S\s][^'\\]*)*'|"[^"\\]*(?:\\[\S\s][^"\\]*)*"|[^,'"\s\\]*(?:\s+[^,'"\s\\]+)*)\s*)*$/
     var re_value =
@@ -28,45 +32,45 @@ function CSVtoArray(text) {
     return a
 }
 
-function transformData(data) {
+/*
+ * group data by card number
+ */
+function groupData(data) {
+    // split data into array of csv rows and delete first 5 header rows
     const table = data.trim().split("\r\n").splice(5)
-    const list = table.map(row => CSVtoArray(row))
+    // pass each row to the csvRowToArray function
+    const list = table.map(row => csvRowToArray(row))
 
-    const cardholders = [...new Set(list.map(row => row[0]))]
-    const cardnumbers = [...new Set(list.map(row => row[1]))]
+    // get unique set of card numbers
+    const cardNumbers = [...new Set(list.map(row => row[1]))]
 
-    const curatedList = list.map(row => row.slice(1, 9))
-
-    const groupedData = cardnumbers.map((num, i) => {
-        const trans = curatedList
-            .filter(row => row[0] === num)
-            .map(tran => tran.slice(1))
+    // return grouped transactions by card number
+    return cardNumbers.map(num => {
+        const trans = list.filter(row => row[1] === num)
         return {
-            cardholder: cardholders[i],
+            cardholder: trans[0][0],
             cardNumber: num,
             transactions: trans.map(tran => ({
-                postDate: tran[0],
-                transDate: tran[1],
-                refId: tran[2],
-                description: tran[3],
-                amount: tran[4],
-                mcc: tran[5],
-                merchCat: tran[6],
+                postDate: tran[2],
+                transDate: tran[3],
+                refId: tran[4],
+                description: tran[5],
+                amount: tran[6],
+                mcc: tran[7],
+                merchCat: tran[8],
                 type: "Expenses",
             })),
         }
     })
-
-    return groupedData
 }
 
 const useData = () => {
-    const [data, setData] = useState()
+    const [data, setData] = useState([])
     const [selectedFile, setSelectedFile] = useState(null)
 
     useEffect(() => {
         function getData() {
-            selectedFile.text().then(data => setData(transformData(data)))
+            selectedFile.text().then(data => setData(groupData(data)))
         }
         if (selectedFile) getData()
     }, [selectedFile])
@@ -105,9 +109,7 @@ const App = () => {
               .toFixed(2)
         : 0
 
-    const types = ["Expenses", "Repaint", "Restaurants", "Gas", "Unknown"]
-
-    const groupedAmountsByTypes = types.map(type =>
+    const groupedAmountsByTypes = categories.map(type =>
         relationsTransactions
             .flat()
             .filter(t => t.type === type)
@@ -135,45 +137,32 @@ const App = () => {
                 </button>
             </div>
             <div ref={printRef}>
-                {data ? (
-                    <Relations
-                        relations={data}
-                        handleTypeChange={handleTypeChange}
-                    />
-                ) : null}
-                <div className="text-xl text-right font-bold">
+                <Relations
+                    relations={data}
+                    handleTypeChange={handleTypeChange}
+                />
+                <div className="text-xl text-right font-bold p-2 text-2xl">
                     Grand Total: {grandTotal}
                 </div>
                 <div className="flex space-x-10">
-                    <div className="w-60 border border-black">
-                        <p className="bg-pink-300 flex justify-between border border-black">
-                            Expenses: <span>${groupedAmountsByTypes[0]}</span>
-                        </p>
-                        <p className="bg-yellow-300 flex justify-between border border-black">
-                            Repaint: <span>${groupedAmountsByTypes[1]}</span>
-                        </p>
-                        <p className="bg-blue-200 flex justify-between border border-black">
-                            Restaurants:{" "}
-                            <span>${groupedAmountsByTypes[2]}</span>
-                        </p>
-                        <p className="bg-purple-300 flex justify-between border border-black">
-                            Gas: <span>${groupedAmountsByTypes[3]}</span>
-                        </p>
-                        <p className="bg-red-200 flex justify-between border border-black">
-                            Unknown: <span>${groupedAmountsByTypes[4]}</span>
-                        </p>
+                    <div className="w-60">
+                        {categories.map((c, i) => (
+                            <p
+                                className={`bg-${categoryColorMap[c]} flex justify-between px-2 py-1 font-bold`}
+                            >
+                                {c}: <span>${groupedAmountsByTypes[i]}</span>
+                            </p>
+                        ))}
                     </div>
                     <div>
                         <p>
-                            Saldo A Pagar por Repaint:{" "}
-                            <span>${groupedAmountsByTypes[1]}</span>
+                            Repaint: <span>${groupedAmountsByTypes[1]}</span>
                         </p>
                         <p>
-                            Saldo Entre las Cuentas Restantes:{" "}
-                            <span>${groupToDivide}</span>
+                            Rest: <span>${groupToDivide}</span>
                         </p>
                         <p>
-                            Each Account Paid (Taylor/Stock/MG){" "}
+                            Divide by accounts{" "}
                             <span>${(groupToDivide / 3).toFixed(2)}</span>
                         </p>
                     </div>
@@ -185,27 +174,41 @@ const App = () => {
 
 const Relations = ({ relations, handleTypeChange }) => {
     return (
-        <div className="border-2">
-            <h1 className="font-bold text-center bg-blue-200">
+        <>
+            <h1 className="font-bold text-center bg-blue-100">
                 CASHREWARDS (008)
             </h1>
             <div className="space-y-5">
-                {relations
-                    ? relations.map(rel => {
-                          return (
-                              <CardholderTrans
-                                  cardholder={rel.cardholder}
-                                  cardNumber={rel.cardNumber}
-                                  trans={rel.transactions}
-                                  key={Math.random() * 100}
-                                  handleTypeChange={handleTypeChange}
-                              />
-                          )
-                      })
-                    : null}
+                {relations.map(rel => (
+                    <CardholderTrans
+                        cardholder={rel.cardholder}
+                        cardNumber={rel.cardNumber}
+                        trans={rel.transactions}
+                        key={Math.random() * 100}
+                        handleTypeChange={handleTypeChange}
+                    />
+                ))}
             </div>
-        </div>
+        </>
     )
+}
+
+const categories = [
+    "Expenses",
+    "Repaint",
+    "Restaurants",
+    "Gas",
+    "Payment",
+    "Unknown",
+]
+
+const categoryColorMap = {
+    Expenses: "pink-200",
+    Repaint: "yellow-200",
+    Restaurants: "blue-200",
+    Gas: "purple-200",
+    Unknown: "red-200",
+    Default: "white",
 }
 
 const CardholderTrans = ({
@@ -215,98 +218,70 @@ const CardholderTrans = ({
     handleTypeChange,
 }) => {
     const total = trans
-        ? trans
-              .map(t => Number(t.amount))
-              .reduce((a, b) => a + b, 0)
-              .toFixed(2)
-        : 0
-
-    function getColorByType(type) {
-        switch (type) {
-            case "Expenses":
-                return "pink-300"
-            case "Repaint":
-                return "yellow-300"
-            case "Restaurants":
-                return "blue-200"
-            case "Gas":
-                return "purple-300"
-            case "Unknown":
-                return "red-200"
-            default:
-                return "white"
-        }
-    }
+        .map(t => Number(t.amount))
+        .reduce((a, b) => a + b, 0)
+        .toFixed(2)
 
     return (
-        <div>
-            <h1 className="text-center font-bold bg-pink-100">
+        <div className="bg-gray-100">
+            <h1 className="text-center font-bold px-2 py-1">
                 {cardholder} - (...{cardNumber})
             </h1>
             <table className="w-full text-sm">
-                <thead className="bg-pink-100 font-bold">
+                <thead className="font-bold">
                     <tr>
                         <td>Posting Date</td>
                         <td>Trans. Date</td>
                         <td>Reference ID</td>
                         <td>Description</td>
                         <td>Amount</td>
-                        <td>MCC</td>
                         <td>Merchant Category</td>
                         <td>Type</td>
                     </tr>
                 </thead>
                 <tbody>
-                    {trans
-                        ? trans.map((transaction, i) => (
-                              <tr
-                                  key={Math.random() * 1000}
-                                  className={`bg-${getColorByType(
-                                      transaction.type
-                                  )}`}
-                              >
-                                  {Object.keys(transaction).map(key =>
-                                      key !== "type" ? (
-                                          <td
-                                              key={Math.random() * 1000}
-                                              className="truncate"
-                                          >
-                                              {transaction[key]}
-                                          </td>
-                                      ) : null
-                                  )}
-                                  <td>
-                                      <select
-                                          value={transaction.type}
-                                          onChange={e =>
-                                              handleTypeChange(
-                                                  e.target.value,
-                                                  cardholder,
-                                                  i
-                                              )
-                                          }
-                                      >
-                                          <option value="Expenses">
-                                              Expenses
-                                          </option>
-                                          <option value="Repaint">
-                                              Repaint
-                                          </option>
-                                          <option value="Gas">Gas</option>
-                                          <option value="Restaurants">
-                                              Restaurants
-                                          </option>
-                                          <option value="Unknown">
-                                              Unknown
-                                          </option>
-                                      </select>
-                                  </td>
-                              </tr>
-                          ))
-                        : null}
+                    {trans.map((transaction, i) => (
+                        <tr
+                            key={Math.random() * 1000}
+                            className={`bg-${
+                                categoryColorMap[transaction.type]
+                            }`}
+                        >
+                            {Object.keys(transaction).map(key => {
+                                if (key === "type" || key === "mcc") return null
+                                const td = (
+                                    <td key={Math.random() * 1000}>
+                                        {transaction[key]}
+                                    </td>
+                                )
+                                return td
+                            })}
+                            <td>
+                                <select
+                                    value={transaction.type}
+                                    onChange={e =>
+                                        handleTypeChange(
+                                            e.target.value,
+                                            cardholder,
+                                            i
+                                        )
+                                    }
+                                    className="h-6 bg-transparent"
+                                >
+                                    {categories.map(cat => (
+                                        <option key={cat} value={cat}>
+                                            {cat}
+                                        </option>
+                                    ))}
+                                </select>
+                            </td>
+                        </tr>
+                    ))}
                 </tbody>
             </table>
-            <p className="font-bold text-right">Total: ${total}</p>
+            <p className="font-bold text-right text-xl px-2 py-1">
+                Total: ${total}
+            </p>
         </div>
     )
 }
