@@ -12,17 +12,15 @@ export const useData = () => {
         if (selectedFile) getData()
     }, [selectedFile])
 
-    const handleTypeChange = (type, cardholder, rowIndex) => {
-        const newTrans = data
-            .filter(rel => rel.cardholder === cardholder)[0]
-            .transactions?.map((t, i) => (i !== rowIndex ? t : { ...t, type }))
-
-        setData(data =>
-            data.map(rel => {
-                if (rel.cardholder !== cardholder) return rel
-                return { ...rel, transactions: newTrans }
+    const handleTypeChange = (type, refId) => {
+        const newTrans = data.map(g => {
+            const transactions = g.transactions?.map(t => {
+                if (t.refId === refId) return { ...t, type }
+                return t
             })
-        )
+            return { ...g, transactions }
+        })
+        setData(newTrans)
     }
 
     return { data, handleTypeChange, setSelectedFile }

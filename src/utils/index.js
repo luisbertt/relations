@@ -47,6 +47,9 @@ export function groupData(data) {
         return {
             cardholder: trans[0][0],
             cardNumber: num,
+            total: trans
+                .map(t => Number(t[6]))
+                .reduce((prev, curr) => prev + curr, 0),
             transactions: trans.map(tran => ({
                 postDate: tran[2],
                 transDate: tran[3],
