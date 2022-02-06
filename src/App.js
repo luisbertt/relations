@@ -1,36 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { useReactToPrint } from "react-to-print"
-
-/*
- * split csv row into an array
- * "example,one,two" -> ['example','one','two']
- */
-function csvRowToArray(text) {
-    var re_valid =
-        /^\s*(?:'[^'\\]*(?:\\[\S\s][^'\\]*)*'|"[^"\\]*(?:\\[\S\s][^"\\]*)*"|[^,'"\s\\]*(?:\s+[^,'"\s\\]+)*)\s*(?:,\s*(?:'[^'\\]*(?:\\[\S\s][^'\\]*)*'|"[^"\\]*(?:\\[\S\s][^"\\]*)*"|[^,'"\s\\]*(?:\s+[^,'"\s\\]+)*)\s*)*$/
-    var re_value =
-        /(?!\s*$)\s*(?:'([^'\\]*(?:\\[\S\s][^'\\]*)*)'|"([^"\\]*(?:\\[\S\s][^"\\]*)*)"|([^,'"\s\\]*(?:\s+[^,'"\s\\]+)*))\s*(?:,|$)/g
-
-    // Return NULL if input string is not well formed CSV string.
-    if (!re_valid.test(text)) return null
-
-    var a = [] // Initialize array to receive values.
-    text.replace(
-        re_value, // "Walk" the string using replace with callback.
-        function (_, m1, m2, m3) {
-            // Remove backslash from \' in single quoted values.
-            if (m1 !== undefined) a.push(m1.replace(/\\'/g, "'"))
-            // Remove backslash from \" in double quoted values.
-            else if (m2 !== undefined) a.push(m2.replace(/\\"/g, '"'))
-            else if (m3 !== undefined) a.push(m3)
-            return "" // Return empty string.
-        }
-    )
-
-    // Handle special case of empty last value.
-    if (/,\s*$/.test(text)) a.push("")
-    return a
-}
+import { csvRowToArray } from "./utils"
 
 /*
  * group data by card number
@@ -65,7 +35,7 @@ function groupData(data) {
 }
 
 const useData = () => {
-    const [data, setData] = useState([])
+    const [data, setData] = useState(null)
     const [selectedFile, setSelectedFile] = useState(null)
 
     useEffect(() => {
@@ -137,43 +107,53 @@ const App = () => {
                 </button>
             </div>
             <div ref={printRef}>
-                <Relations
-                    relations={data}
-                    handleTypeChange={handleTypeChange}
-                />
-                <div className="text-xl text-right font-bold p-2 text-2xl">
-                    Grand Total: {grandTotal}
-                </div>
-                <div className="flex space-x-10">
-                    <div className="w-60">
-                        {categories.map((c, i) => {
-                            return (
-                                <p
-                                    className={categoryColorMap[c]}
-                                    style={{
-                                        justifyContent: "space-between",
-                                        display: "flex",
-                                        padding: ".5rem 1rem",
-                                    }}
-                                >
-                                    {c}:<span>${groupedAmountsByTypes[i]}</span>
+                {data ? (
+                    <>
+                        <Relations
+                            relations={data}
+                            handleTypeChange={handleTypeChange}
+                        />
+                        <div className="text-xl text-right font-bold p-2 text-2xl">
+                            Grand Total: {grandTotal}
+                        </div>
+                        <div className="flex space-x-10">
+                            <div className="w-60">
+                                {categories.map((c, i) => {
+                                    return (
+                                        <p
+                                            className={categoryColorMap[c]}
+                                            style={{
+                                                justifyContent: "space-between",
+                                                display: "flex",
+                                                padding: ".5rem 1rem",
+                                            }}
+                                        >
+                                            {c}:
+                                            <span>
+                                                ${groupedAmountsByTypes[i]}
+                                            </span>
+                                        </p>
+                                    )
+                                })}
+                            </div>
+                            <div>
+                                <p>
+                                    Repaint:{" "}
+                                    <span>${groupedAmountsByTypes[1]}</span>
                                 </p>
-                            )
-                        })}
-                    </div>
-                    <div>
-                        <p>
-                            Repaint: <span>${groupedAmountsByTypes[1]}</span>
-                        </p>
-                        <p>
-                            Rest: <span>${groupToDivide}</span>
-                        </p>
-                        <p>
-                            Divide by accounts{" "}
-                            <span>${(groupToDivide / 3).toFixed(2)}</span>
-                        </p>
-                    </div>
-                </div>
+                                <p>
+                                    Rest: <span>${groupToDivide}</span>
+                                </p>
+                                <p>
+                                    Divide by accounts{" "}
+                                    <span>
+                                        ${(groupToDivide / 3).toFixed(2)}
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+                    </>
+                ) : null}
             </div>
         </div>
     )
