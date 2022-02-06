@@ -1,15 +1,5 @@
-import { useRef } from "react"
-import { useReactToPrint } from "react-to-print"
-import { useData } from "./hooks/useData"
-
-const usePrint = () => {
-    const printRef = useRef()
-    const handlePrint = useReactToPrint({
-        content: () => printRef.current,
-    })
-
-    return { printRef, handlePrint }
-}
+import { useData, usePrint } from "./hooks"
+import { categories, categoryColorMap } from "./utils"
 
 const App = () => {
     const { data, handleTypeChange, setSelectedFile } = useData()
@@ -113,16 +103,12 @@ const Relations = ({ relations, handleTypeChange }) => {
             <div className="space-y-5">
                 {relations.map(
                     ({ cardholder, cardNumber, transactions, total }) => (
-                        <div className="bg-gray-100">
+                        <div className="bg-gray-100" key={cardholder}>
                             <h1 className="text-center font-bold px-2 py-1">
                                 {cardholder} - (...{cardNumber})
                             </h1>
                             <CardholderTrans
-                                cardholder={cardholder}
-                                cardNumber={cardNumber}
                                 trans={transactions}
-                                total={total}
-                                key={Math.random() * 100}
                                 handleTypeChange={handleTypeChange}
                             />
                             <p className="font-bold text-right text-xl px-2 py-1">
@@ -134,24 +120,6 @@ const Relations = ({ relations, handleTypeChange }) => {
             </div>
         </>
     )
-}
-
-const categories = [
-    "Expenses",
-    "Repaint",
-    "Restaurants",
-    "Gas",
-    "Payment",
-    "Unknown",
-]
-
-const categoryColorMap = {
-    Expenses: "bg-pink-200",
-    Repaint: "bg-yellow-200",
-    Restaurants: "bg-blue-200",
-    Gas: "bg-purple-200",
-    Unknown: "bg-red-200",
-    Default: "bg-white",
 }
 
 const CardholderTrans = ({ trans, handleTypeChange }) => {
@@ -170,37 +138,23 @@ const CardholderTrans = ({ trans, handleTypeChange }) => {
             </thead>
             <tbody>
                 {trans.map(transaction => {
+                    const { refId, type } = transaction
                     return (
-                        <tr
-                            key={Math.random() * 1000}
-                            className={categoryColorMap[transaction.type]}
-                        >
+                        <tr key={refId} className={categoryColorMap[type]}>
                             {Object.keys(transaction).map(key => {
                                 if (key === "type" || key === "mcc") return null
-                                const td = (
+                                return (
                                     <td key={Math.random() * 1000}>
                                         {transaction[key]}
                                     </td>
                                 )
-                                return td
                             })}
                             <td>
-                                <select
-                                    value={transaction.type}
-                                    onChange={e =>
-                                        handleTypeChange(
-                                            e.target.value,
-                                            transaction.refId
-                                        )
-                                    }
-                                    className="h-6 bg-transparent"
-                                >
-                                    {categories.map(cat => (
-                                        <option key={cat} value={cat}>
-                                            {cat}
-                                        </option>
-                                    ))}
-                                </select>
+                                <TypeSelect
+                                    refId={refId}
+                                    type={type}
+                                    handleTypeChange={handleTypeChange}
+                                />
                             </td>
                         </tr>
                     )
@@ -209,5 +163,19 @@ const CardholderTrans = ({ trans, handleTypeChange }) => {
         </table>
     )
 }
+
+const TypeSelect = ({ refId, type, handleTypeChange }) => (
+    <select
+        value={type}
+        onChange={e => handleTypeChange(e.target.value, refId)}
+        className="h-6 bg-transparent focus:outline-none"
+    >
+        {categories.map(cat => (
+            <option key={cat} value={cat}>
+                {cat}
+            </option>
+        ))}
+    </select>
+)
 
 export default App

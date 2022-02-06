@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react"
+import { useRef } from "react"
+import { useReactToPrint } from "react-to-print"
 import { groupData } from "../utils"
 
 export const useData = () => {
@@ -24,4 +26,13 @@ export const useData = () => {
     }
 
     return { data, handleTypeChange, setSelectedFile }
+}
+
+export const usePrint = () => {
+    const printRef = useRef()
+    const handlePrint = useReactToPrint({
+        content: () => printRef.current,
+    })
+
+    return { printRef, handlePrint }
 }

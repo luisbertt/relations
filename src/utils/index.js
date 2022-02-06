@@ -63,3 +63,21 @@ export function groupData(data) {
         }
     })
 }
+
+export const categories = [
+    "Expenses",
+    "Repaint",
+    "Restaurants",
+    "Gas",
+    "Payment",
+    "Unknown",
+]
+
+export const categoryColorMap = {
+    Expenses: "bg-pink-200",
+    Repaint: "bg-yellow-200",
+    Restaurants: "bg-blue-200",
+    Gas: "bg-purple-200",
+    Unknown: "bg-red-200",
+    Default: "bg-white",
+}
