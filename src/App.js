@@ -1,65 +1,6 @@
-import { useEffect, useRef, useState } from "react"
+import { useRef } from "react"
 import { useReactToPrint } from "react-to-print"
-import { csvRowToArray } from "./utils"
-
-/*
- * group data by card number
- */
-function groupData(data) {
-    // split data into array of csv rows and delete first 5 header rows
-    const table = data.trim().split("\r\n").splice(5)
-    // pass each row to the csvRowToArray function
-    const list = table.map(row => csvRowToArray(row))
-
-    // get unique set of card numbers
-    const cardNumbers = [...new Set(list.map(row => row[1]))]
-
-    // return grouped transactions by card number
-    return cardNumbers.map(num => {
-        const trans = list.filter(row => row[1] === num)
-        return {
-            cardholder: trans[0][0],
-            cardNumber: num,
-            transactions: trans.map(tran => ({
-                postDate: tran[2],
-                transDate: tran[3],
-                refId: tran[4],
-                description: tran[5],
-                amount: tran[6],
-                mcc: tran[7],
-                merchCat: tran[8],
-                type: "Expenses",
-            })),
-        }
-    })
-}
-
-const useData = () => {
-    const [data, setData] = useState(null)
-    const [selectedFile, setSelectedFile] = useState(null)
-
-    useEffect(() => {
-        function getData() {
-            selectedFile.text().then(data => setData(groupData(data)))
-        }
-        if (selectedFile) getData()
-    }, [selectedFile])
-
-    const handleTypeChange = (type, cardholder, rowIndex) => {
-        const newTrans = data
-            .filter(rel => rel.cardholder === cardholder)[0]
-            .transactions?.map((t, i) => (i !== rowIndex ? t : { ...t, type }))
-
-        setData(data =>
-            data.map(rel => {
-                if (rel.cardholder !== cardholder) return rel
-                return { ...rel, transactions: newTrans }
-            })
-        )
-    }
-
-    return { data, handleTypeChange, setSelectedFile }
-}
+import { useData } from "./hooks/useData"
 
 const App = () => {
     const { data, handleTypeChange, setSelectedFile } = useData()

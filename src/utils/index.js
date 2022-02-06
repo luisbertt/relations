@@ -28,3 +28,35 @@ export function csvRowToArray(text) {
     if (/,\s*$/.test(text)) a.push("")
     return a
 }
+
+/*
+ * group data by card number
+ */
+export function groupData(data) {
+    // split data into array of csv rows and delete first 5 header rows
+    const table = data.trim().split("\r\n").splice(5)
+    // pass each row to the csvRowToArray function
+    const list = table.map(row => csvRowToArray(row))
+
+    // get unique set of card numbers
+    const cardNumbers = [...new Set(list.map(row => row[1]))]
+
+    // return grouped transactions by card number
+    return cardNumbers.map(num => {
+        const trans = list.filter(row => row[1] === num)
+        return {
+            cardholder: trans[0][0],
+            cardNumber: num,
+            transactions: trans.map(tran => ({
+                postDate: tran[2],
+                transDate: tran[3],
+                refId: tran[4],
+                description: tran[5],
+                amount: tran[6],
+                mcc: tran[7],
+                merchCat: tran[8],
+                type: "Expenses",
+            })),
+        }
+    })
+}
