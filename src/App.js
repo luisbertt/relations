@@ -129,7 +129,7 @@ const App = () => {
     }
 
     return (
-        <div className="container mx-auto">
+        <div className="container mx-auto py-8">
             <div className="flex justify-between">
                 <input type="file" onChange={handleFileChange} />
                 <button className="p-1 border rounded" onClick={handlePrint}>
@@ -146,13 +146,14 @@ const App = () => {
                 </div>
                 <div className="flex space-x-10">
                     <div className="w-60">
-                        {categories.map((c, i) => (
-                            <p
-                                className={`bg-${categoryColorMap[c]} flex justify-between px-2 py-1 font-bold`}
-                            >
-                                {c}: <span>${groupedAmountsByTypes[i]}</span>
-                            </p>
-                        ))}
+                        {categories.map((c, i) => {
+                            const styles = `bg-${categoryColorMap[c]} flex justify-between px-2 py-1 font-bold`
+                            return (
+                                <p className={styles}>
+                                    {c}:<span>${groupedAmountsByTypes[i]}</span>
+                                </p>
+                            )
+                        })}
                     </div>
                     <div>
                         <p>
@@ -240,43 +241,47 @@ const CardholderTrans = ({
                     </tr>
                 </thead>
                 <tbody>
-                    {trans.map((transaction, i) => (
-                        <tr
-                            key={Math.random() * 1000}
-                            className={`bg-${
-                                categoryColorMap[transaction.type]
-                            }`}
-                        >
-                            {Object.keys(transaction).map(key => {
-                                if (key === "type" || key === "mcc") return null
-                                const td = (
-                                    <td key={Math.random() * 1000}>
-                                        {transaction[key]}
-                                    </td>
-                                )
-                                return td
-                            })}
-                            <td>
-                                <select
-                                    value={transaction.type}
-                                    onChange={e =>
-                                        handleTypeChange(
-                                            e.target.value,
-                                            cardholder,
-                                            i
-                                        )
-                                    }
-                                    className="h-6 bg-transparent"
-                                >
-                                    {categories.map(cat => (
-                                        <option key={cat} value={cat}>
-                                            {cat}
-                                        </option>
-                                    ))}
-                                </select>
-                            </td>
-                        </tr>
-                    ))}
+                    {trans.map((transaction, i) => {
+                        const backgroundColor = `bg-${
+                            categoryColorMap[transaction.type]
+                        }`
+                        return (
+                            <tr
+                                key={Math.random() * 1000}
+                                className={backgroundColor}
+                            >
+                                {Object.keys(transaction).map(key => {
+                                    if (key === "type" || key === "mcc")
+                                        return null
+                                    const td = (
+                                        <td key={Math.random() * 1000}>
+                                            {transaction[key]}
+                                        </td>
+                                    )
+                                    return td
+                                })}
+                                <td>
+                                    <select
+                                        value={transaction.type}
+                                        onChange={e =>
+                                            handleTypeChange(
+                                                e.target.value,
+                                                cardholder,
+                                                i
+                                            )
+                                        }
+                                        className="h-6 bg-transparent"
+                                    >
+                                        {categories.map(cat => (
+                                            <option key={cat} value={cat}>
+                                                {cat}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </td>
+                            </tr>
+                        )
+                    })}
                 </tbody>
             </table>
             <p className="font-bold text-right text-xl px-2 py-1">
