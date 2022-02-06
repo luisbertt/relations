@@ -147,9 +147,15 @@ const App = () => {
                 <div className="flex space-x-10">
                     <div className="w-60">
                         {categories.map((c, i) => {
-                            const styles = `bg-${categoryColorMap[c]} flex justify-between px-2 py-1 font-bold`
                             return (
-                                <p className={styles}>
+                                <p
+                                    className={categoryColorMap[c]}
+                                    style={{
+                                        justifyContent: "space-between",
+                                        display: "flex",
+                                        padding: ".5rem 1rem",
+                                    }}
+                                >
                                     {c}:<span>${groupedAmountsByTypes[i]}</span>
                                 </p>
                             )
@@ -204,12 +210,12 @@ const categories = [
 ]
 
 const categoryColorMap = {
-    Expenses: "pink-200",
-    Repaint: "yellow-200",
-    Restaurants: "blue-200",
-    Gas: "purple-200",
-    Unknown: "red-200",
-    Default: "white",
+    Expenses: "bg-pink-200",
+    Repaint: "bg-yellow-200",
+    Restaurants: "bg-blue-200",
+    Gas: "bg-purple-200",
+    Unknown: "bg-red-200",
+    Default: "bg-white",
 }
 
 const CardholderTrans = ({
@@ -242,13 +248,10 @@ const CardholderTrans = ({
                 </thead>
                 <tbody>
                     {trans.map((transaction, i) => {
-                        const backgroundColor = `bg-${
-                            categoryColorMap[transaction.type]
-                        }`
                         return (
                             <tr
                                 key={Math.random() * 1000}
-                                className={backgroundColor}
+                                className={categoryColorMap[transaction.type]}
                             >
                                 {Object.keys(transaction).map(key => {
                                     if (key === "type" || key === "mcc")
